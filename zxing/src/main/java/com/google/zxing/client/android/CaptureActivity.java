@@ -78,7 +78,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
   private static final String TAG = CaptureActivity.class.getSimpleName();
 
-  private static final long DEFAULT_INTENT_RESULT_DURATION_MS = 1500L;
+  //dzm modify:在自己的onAcitivityResult中处理跳转浏览器，在跳转之前会有延迟(1500L)
+  private static final long DEFAULT_INTENT_RESULT_DURATION_MS = 0L;
   private static final long BULK_MODE_SCAN_DELAY_MS = 1000L;
 
   private static final String[] ZXING_URLS = { "http://zxing.appspot.com/scan", "zxing://scan/" };
@@ -600,9 +601,9 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   // Briefly show the contents of the barcode, then handle the result outside Barcode Scanner.
   private void handleDecodeExternally(Result rawResult, ResultHandler resultHandler, Bitmap barcode) {
 
-    if (barcode != null) {
-      viewfinderView.drawResultBitmap(barcode);
-    }
+//    if (barcode != null) {
+//      viewfinderView.drawResultBitmap(barcode);
+//    }
 
     long resultDurationMS;
     if (getIntent() == null) {

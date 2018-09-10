@@ -185,6 +185,9 @@ final class CameraConfigurationManager {
 
     }
 
+    //dzm modify:添加对焦距的调整，让识别效果更加快速、准确
+    CameraConfigurationUtils.setZoom(parameters, 1.5);
+
     parameters.setPreviewSize(bestPreviewSize.x, bestPreviewSize.y);
 
     theCamera.setParameters(parameters);

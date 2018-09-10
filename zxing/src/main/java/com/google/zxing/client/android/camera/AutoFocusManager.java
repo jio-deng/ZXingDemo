@@ -25,6 +25,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
 import com.google.zxing.client.android.PreferencesActivity;
@@ -35,7 +36,8 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
   private static final String TAG = AutoFocusManager.class.getSimpleName();
 
   //在自动聚焦的时候会根据该变量设定的时间来睡眠
-  private static final long AUTO_FOCUS_INTERVAL_MS = 1000L;
+  private static final long AUTO_FOCUS_INTERVAL_MS = 1500L;
+  private static final long AUTO_FOCUS_STOP = 3000L;
   private static final Collection<String> FOCUS_MODES_CALLING_AF;
   static {
     FOCUS_MODES_CALLING_AF = new ArrayList<>(2);
@@ -48,6 +50,7 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
   private final boolean useAutoFocus;
   private final Camera camera;
   private AsyncTask<?,?,?> outstandingTask;
+  private AutoStopTask autoStopTask;
 
   AutoFocusManager(Context context, Camera camera) {
     this.camera = camera;
@@ -62,8 +65,21 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
 
   @Override
   public synchronized void onAutoFocus(boolean success, Camera theCamera) {
-    focusing = false;
-    autoFocusAgainLater();
+      //dzm modify:executeOnExecutor这个函数是API11后提供的新函数，
+      //内部传入参数AsyncTask.THREAD_POOL_EXECUTOR是设定线程可以并发，但是不能超过5个，
+      //这样会对我们新修改的代码造成线程阻塞，对焦几次后边不会再自动对焦了，所以要做修改，不限制线程的并发
+      //目前测试没有问题，不知道会不会因为线程回收不即使导致程序崩溃
+      if (focusing) {
+          outstandingTask = new AutoFocusTask();
+//      outstandingTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+          outstandingTask.executeOnExecutor(Executors.newCachedThreadPool());
+          autoStopTask = new AutoStopTask();
+//      autoStopTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+          autoStopTask.executeOnExecutor(Executors.newCachedThreadPool());
+          focusing = false;
+      }
+//          focusing = false;
+//    autoFocusAgainLater();
   }
 
   private synchronized void autoFocusAgainLater() {
@@ -81,7 +97,9 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
   synchronized void start() {
     if (useAutoFocus) {
       outstandingTask = null;
-      if (!stopped && !focusing) {
+      //dzm modify
+        //if (!stopped && !focusing)
+      if (!focusing) {
         try {
           camera.autoFocus(this);
           focusing = true;
@@ -104,13 +122,23 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
     }
   }
 
+  private synchronized void cancelStopTask() {
+      if(autoStopTask != null){
+          autoStopTask.cancel(true);
+          autoStopTask = null;
+      }
+      autoStopTask = null;
+  }
+
   synchronized void stop() {
     stopped = true;
     if (useAutoFocus) {
       cancelOutstandingTask();
+      cancelStopTask();
       // Doesn't hurt to call this even if not focusing
       try {
-        camera.cancelAutoFocus();
+//        camera.cancelAutoFocus();
+        start();
       } catch (RuntimeException re) {
         // Have heard RuntimeException reported in Android 4.0.x+; continue?
         Log.w(TAG, "Unexpected exception while cancelling focusing", re);
@@ -130,5 +158,23 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
       return null;
     }
   }
+
+  //dzm modify:停止变焦
+    private final class AutoStopTask extends AsyncTask<Object, Object, Object>{
+
+        @Override
+        protected Object doInBackground(Object... params) {
+            try {
+                Thread.sleep(AUTO_FOCUS_STOP);
+            } catch (InterruptedException e) {
+                // continue
+            }
+            synchronized (AutoFocusManager.this) {
+                stop();
+            }
+            return null;
+        }
+
+    }
 
 }

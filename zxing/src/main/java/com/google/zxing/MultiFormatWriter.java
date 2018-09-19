@@ -28,7 +28,6 @@ import com.google.zxing.oned.EAN8Writer;
 import com.google.zxing.oned.ITFWriter;
 import com.google.zxing.oned.UPCAWriter;
 import com.google.zxing.oned.UPCEWriter;
-import com.google.zxing.pdf417.PDF417Writer;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.util.Map;
@@ -83,9 +82,6 @@ public final class MultiFormatWriter implements Writer {
         break;
       case ITF:
         writer = new ITFWriter();
-        break;
-      case PDF_417:
-        writer = new PDF417Writer();
         break;
       case CODABAR:
         writer = new CodaBarWriter();

@@ -26,12 +26,60 @@ android {
             path "CMakeLists.txt"
         }
     }
+
+    //gradle - groovy基础
+//    task(dztest).doLast {
+//        println("start excute dz")
+//        def file1 = new File("a.txt")
+//        def file2 = new File("a.txt")
+//        assert file1 == file2
+//        assert file1.is(file2)
+//    }
+//    task hello(type:DzTask) {
+//        name = "666"
+//    }
+    task hello {
+
+    }
+
+    hello << {
+        println "hello!"
+    }
 }
+
+//class DzTask extends DefaultTask {
+//    String name = "dz_task"
+//
+//    @TaskAction
+//    def hello() {
+//        println "$name says hello!"
+//    }
+//}
+
+
+//task hello(type:DzTask) {
+//    name = "666666"
+//}
+
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+
+////    # required, enough for most devices.
+//    implementation 'tv.danmaku.ijk.media:ijkplayer-java:0.8.8'
+//    implementation 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.8.8'
+//
+////    # Other ABIs: optional
+//    implementation 'tv.danmaku.ijk.media:ijkplayer-armv5:0.8.8'
+//    implementation 'tv.danmaku.ijk.media:ijkplayer-arm64:0.8.8'
+//    implementation 'tv.danmaku.ijk.media:ijkplayer-x86:0.8.8'
+//    implementation 'tv.danmaku.ijk.media:ijkplayer-x86_64:0.8.8'
+//
+////    # ExoPlayer as IMediaPlayer: optional, experimental
+//    implementation 'tv.danmaku.ijk.media:ijkplayer-exo:0.8.8'
+
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

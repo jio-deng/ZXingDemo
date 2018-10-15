@@ -27,6 +27,19 @@ public class DzTextureView extends TextureView implements MeasureUtil.MeasureFor
     }
 
     /**
+     * 改变宽高，重新计算视频内容大小
+     * @param videoWidth w
+     * @param videoHeight h
+     */
+    public void adaptVideoSize(int videoWidth, int videoHeight) {
+        if (this.videoWidth != videoWidth || this.videoHeight != videoHeight) {
+            this.videoWidth = videoWidth;
+            this.videoHeight = videoHeight;
+            requestLayout();
+        }
+    }
+
+    /**
      * init measure util
      */
     private void init() {

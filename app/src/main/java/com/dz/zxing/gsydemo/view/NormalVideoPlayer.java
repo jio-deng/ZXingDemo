@@ -84,6 +84,7 @@ public class NormalVideoPlayer extends FrameLayout implements IVideoPlayer, Text
     private int videoWidth;
     private int videoHeight;
     private int mBufferPercentage;
+    private long skipPosition;//从何处开始播放
 
     private MediaPlayer mediaPlayer;
     private AudioManager mAudioManager;
@@ -135,25 +136,54 @@ public class NormalVideoPlayer extends FrameLayout implements IVideoPlayer, Text
 
     @Override
     public void start() {
-        initAudioManager();
-        initMediaPlayer();
-        initTextureView();
-        addTextureView();
+        if (mCurrentState == STATE_IDLE) {
+            initAudioManager();
+            initMediaPlayer();
+            initTextureView();
+            addTextureView();
+        } else {
+            Log.e(TAG, "start: can not start at state:" + mCurrentState);
+        }
     }
 
     @Override
     public void start(long position) {
-
+        skipPosition = position;
+        start();
     }
 
     @Override
     public void restart() {
-
+        if (mCurrentState == STATE_PAUSED) {
+            mediaPlayer.start();
+            mCurrentState = STATE_PLAYING;
+            videoPlayerController.onPlayStateChanged(mCurrentState);
+//            LogUtil.d("STATE_PLAYING");
+        } else if (mCurrentState == STATE_BUFFERING_PAUSED) {
+            mediaPlayer.start();
+            mCurrentState = STATE_BUFFERING_PLAYING;
+            videoPlayerController.onPlayStateChanged(mCurrentState);
+//            LogUtil.d("STATE_BUFFERING_PLAYING");
+        } else if (mCurrentState == STATE_COMPLETED || mCurrentState == STATE_ERROR) {
+            mediaPlayer.reset();
+            openMediaPlayer();
+        } else {
+//            LogUtil.d("NiceVideoPlayer在mCurrentState == " + mCurrentState + "时不能调用restart()方法.");
+        }
     }
 
     @Override
     public void pause() {
-
+        if (mCurrentState == STATE_PLAYING) {
+            mediaPlayer.pause();
+            mCurrentState = STATE_PAUSED;
+            videoPlayerController.onPlayStateChanged(mCurrentState);
+        }
+        if (mCurrentState == STATE_BUFFERING_PLAYING) {
+            mediaPlayer.pause();
+            mCurrentState = STATE_BUFFERING_PAUSED;
+            videoPlayerController.onPlayStateChanged(mCurrentState);
+        }
     }
 
     @Override
@@ -252,12 +282,12 @@ public class NormalVideoPlayer extends FrameLayout implements IVideoPlayer, Text
 
     @Override
     public long getDuration() {
-        return 0;
+        return mediaPlayer != null ? mediaPlayer.getDuration() : 0;
     }
 
     @Override
     public long getCurrentPosition() {
-        return 0;
+        return mediaPlayer != null ? mediaPlayer.getCurrentPosition() : 0;
     }
 
     @Override
@@ -293,7 +323,29 @@ public class NormalVideoPlayer extends FrameLayout implements IVideoPlayer, Text
 
     @Override
     public void release() {
+        // 保存播放位置 todo
+//        if (isPlaying() || isBufferingPlaying() || isBufferingPaused() || isPaused()) {
+//            NiceUtil.savePlayPosition(mContext, mUrl, getCurrentPosition());
+//        } else if (isCompleted()) {
+//            NiceUtil.savePlayPosition(mContext, mUrl, 0);
+//        }
+        // 退出全屏或小窗口
+        if (isFullScreen()) {
+            exitFullScreen();
+        }
+        if (isTinyWindow()) {
+//todo            exitTinyWindow();
+        }
+        mCurrentMode = MODE_NORMAL;
 
+        // 释放播放器
+        releasePlayer();
+
+        // 恢复控制器
+        if (videoPlayerController != null) {
+            videoPlayerController.reset();
+        }
+        Runtime.getRuntime().gc();
     }
 
     /**
@@ -383,6 +435,7 @@ public class NormalVideoPlayer extends FrameLayout implements IVideoPlayer, Text
             mediaPlayer.setSurface(mSurface);
             mediaPlayer.prepareAsync();
             mCurrentState = STATE_PREPARING;
+            videoPlayerController.onPlayStateChanged(mCurrentState);
         } catch (IOException e) {
             e.printStackTrace();
             Log.e(TAG, "openMediaPlayer: 打开播放器错误！");
@@ -451,7 +504,19 @@ public class NormalVideoPlayer extends FrameLayout implements IVideoPlayer, Text
         videoWidth = mp.getVideoWidth();
         videoHeight = mp.getVideoHeight();
         textureView.setVideoWidthAndHeight(videoWidth, videoHeight);
+
+        mCurrentState = STATE_PREPARED;
+        videoPlayerController.onPlayStateChanged(mCurrentState);
         mp.start();
+        // 从上次的保存位置播放
+//        if (continueFromLastPosition) {
+//            long savedPlayPosition = NiceUtil.getSavedPlayPosition(mContext, mUrl);
+//            mp.seekTo(savedPlayPosition);
+//        }
+        // 跳到指定位置播放
+        if (skipPosition != 0) {
+            mp.seekTo((int) skipPosition);
+        }
     }
 
     @Override

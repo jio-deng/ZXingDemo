@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
 import com.dz.zxing.R;
 import com.dz.zxing.gsydemo.view.NormalVideoPlayer;
+import com.dz.zxing.gsydemo.view.TxVideoPlayerController;
 
 /**
  * @Description normal video activity
@@ -23,7 +25,15 @@ public class NormalVideoActivity extends Activity {
 
         mTexNormalVideo = findViewById(R.id.texture_normal_video);
         mTexNormalVideo.setUp(source1, null);
-        mTexNormalVideo.start();
+        TxVideoPlayerController controller = new TxVideoPlayerController(this);
+        controller.setTitle("This is Dz testing.");
+        controller.setLenght(120000);//todo
+        Glide.with(this)
+                .load("http://imgsrc.baidu.com/image/c0%3Dshijue%2C0%2C0%2C245%2C40/sign=304dee3ab299a9012f38537575fc600e/91529822720e0cf3f8b77cd50046f21fbe09aa5f.jpg")
+                .placeholder(R.drawable.ic_launcher_background)
+                .crossFade()
+                .into(controller.imageView());
+        mTexNormalVideo.setController(controller);
     }
 
 }

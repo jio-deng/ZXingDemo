@@ -1,10 +1,12 @@
 package com.dz.zxing.gsydemo.view;
 
 import android.content.Context;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import com.dz.zxing.gsydemo.utils.BrightnessUtil;
 
@@ -17,7 +19,7 @@ import java.util.TimerTask;
  */
 public abstract class DzVideoPlayerController extends FrameLayout implements View.OnTouchListener {
     private Context mContext;
-    private IVideoPlayer mVideoPlayer;
+    protected IVideoPlayer mVideoPlayer;
 
     //移动方向判定界限
     private static final int THRESHORD = 80;
@@ -94,7 +96,15 @@ public abstract class DzVideoPlayerController extends FrameLayout implements Vie
             return false;
         }
 
-        //TODO:judge state
+        //非播放状态
+        if (mVideoPlayer.isIdle()
+                || mVideoPlayer.isError()
+                || mVideoPlayer.isPrepared() || mVideoPlayer.isPreparing() || mVideoPlayer.isCompleted()) {
+            hideChangePosition();
+            hideChangeBrightness();
+            hideChangeVolume();
+            return false;
+        }
 
         float x = event.getX();
         float y = event.getY();
@@ -230,4 +240,38 @@ public abstract class DzVideoPlayerController extends FrameLayout implements Vie
      * 重置控制器，将控制器恢复到初始状态。
      */
     protected abstract void reset();
+
+    /**
+     * 设置播放的视频的标题
+     *
+     * @param title 视频标题
+     */
+    public abstract void setTitle(String title);
+
+    /**
+     * 视频底图
+     *
+     * @param resId 视频底图资源
+     */
+    public abstract void setImage(@DrawableRes int resId);
+
+    /**
+     * 视频底图ImageView控件，提供给外部用图片加载工具来加载网络图片
+     *
+     * @return 底图ImageView
+     */
+    public abstract ImageView imageView();
+
+    /**
+     * 设置总时长.
+     */
+    public abstract void setLenght(long length);
+
+    /**
+     * 当播放器的播放模式发生变化，在此方法中更新不同模式下的控制器界面。
+     *
+     * @param playMode 播放器的模式：normal、full screen、window
+     */
+    protected abstract void onPlayModeChanged(int playMode);
+
 }
